@@ -15,6 +15,9 @@ extern "C" {
 #define PIC24F04KL101
 #define XTAL_FREQ       8000000UL           // Raw oscillator freq
 #define FCY             XTAL_FREQ / 2       // Most but not all PIC24s
+    
+#define LED_TRIS        TRISAbits.TRISA4    // Used for debugging and initial testing
+#define LED             LATAbits.LATA4
 
 #ifdef	__cplusplus
 }
