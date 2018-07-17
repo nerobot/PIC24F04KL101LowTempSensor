@@ -10,15 +10,20 @@
 #include <xc.h>
 #include <libpic30.h>
 #include "uart1.h"
+#include "i2c1.h"
 
 int main(void) {
     // Init LED
     LED_TRIS = 0;
     LED = 0;
     
-    // Init I2C
+    // Init UART1
     initU1(BRATE, U1MODE_BOTH, U1STA_BOTH);
     putU1S("Uart1 init\n");
+    
+    // Init I2C
+    i2cInit(SSPADD1);
+    putU1S("i2c1 init\n");
     
     while(1){
         // Flashing the LED
