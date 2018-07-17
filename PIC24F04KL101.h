@@ -18,6 +18,15 @@ extern "C" {
     
 #define LED_TRIS        TRISAbits.TRISA4    // Used for debugging and initial testing
 #define LED             LATAbits.LATA4
+        
+#define BR              9600                 // Baud rate
+#define BRATE           ((FCY/BR)/16)-1
+#define U1MODE_HIGH     0b10000000          // Bits 8-15
+#define U1MODE_LOW      0b00000000          // Bits 0-7
+#define U1MODE_BOTH     (U1MODE_HIGH << 8) + U1MODE_LOW
+#define U1STA_HIGH      0b00010100          // Bits 8-15
+#define U1STA_LOW       0b00000000          // Bits 0-7
+#define U1STA_BOTH      (U1STA_HIGH << 8) + U1STA_LOW    
 
 #ifdef	__cplusplus
 }
