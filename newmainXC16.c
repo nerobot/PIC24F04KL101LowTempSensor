@@ -10,8 +10,10 @@
 #include <xc.h>
 #include <libpic30.h>
 #include "uart1.h"
+#include "i2c1.h"
 
 int main(void) {    
+<<<<<<< HEAD
     // Init I2C
     initU1(BRATE, U1MODE_BOTH, U1STA_BOTH);
     putU1S("Uart1 init\n\r");
@@ -21,6 +23,17 @@ int main(void) {
         LED ^= 1;
         
         putU1S("LED changed\n\r");
+=======
+    // Init UART1
+    initU1(BRATE, U1MODE_BOTH, U1STA_BOTH);
+    putU1S("Uart1 init\n\r");
+    
+    // Init I2C
+    i2cInit(SSPADD1);
+    putU1S("i2c1 init\n\r");
+    
+    while(1){
+>>>>>>> i2c1-test
         __delay_ms(1000);
     }
     
