@@ -11,11 +11,7 @@
 #include <libpic30.h>
 #include "uart1.h"
 
-int main(void) {
-    // Init LED - Removed as no longer used
-    //LED_TRIS = 0;
-    //LED = 0;
-    
+int main(void) {    
     // Init I2C
     initU1(BRATE, U1MODE_BOTH, U1STA_BOTH);
     putU1S("Uart1 init\n\r");
