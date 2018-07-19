@@ -11,15 +11,20 @@
 #include <libpic30.h>
 #include "uart1.h"
 #include "i2c1.h"
+#include "mcp9808.h"
 
 int main(void) {    
-    // Init I2C
+    // Init UART1
     initU1(BRATE, U1MODE_BOTH, U1STA_BOTH);
     putU1S("Uart1 init\n\r");
         
     // Init I2C
     i2cInit(SSPADD1);
     putU1S("i2c1 init\n\r");
+    
+    // Init MCP
+    while(!initMCP()){}
+    putU1S("mcp init\n\r");
     
     while(1){
         __delay_ms(1000);
