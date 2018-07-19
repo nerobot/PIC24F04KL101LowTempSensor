@@ -9,15 +9,22 @@
 #include "PIC24F04KL101.h"
 #include <xc.h>
 #include <libpic30.h>
+#include "uart1.h"
 
 int main(void) {
-    // Init LED
-    LED_TRIS = 0;
-    LED = 0;
+    // Init LED - Removed as no longer used
+    //LED_TRIS = 0;
+    //LED = 0;
+    
+    // Init I2C
+    initU1(BRATE, U1MODE_BOTH, U1STA_BOTH);
+    putU1S("Uart1 init\n\r");
     
     while(1){
         // Flashing the LED
         LED ^= 1;
+        
+        putU1S("LED changed\n\r");
         __delay_ms(1000);
     }
     
