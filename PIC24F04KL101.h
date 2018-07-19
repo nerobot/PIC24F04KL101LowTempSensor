@@ -18,9 +18,6 @@ extern "C" {
 #define XTAL_FREQ       8000000UL           // Raw oscillator freq
 #define FCY             XTAL_FREQ / 2       // Most but not all PIC24s
     
-#define LED_TRIS        TRISAbits.TRISA4    // Used for debugging and initial testing
-#define LED             LATAbits.LATA4
-    
 // UART1 config
 #define BR              9600                 // Baud rate
 #define BRATE           ((FCY/BR)/16)-1
