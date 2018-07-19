@@ -25,16 +25,20 @@ int main(void) {
     // Init MCP
     while(!initMCP()){}
     putU1S("mcp init\n\r");
+    mcpShutdown();
     
     uint16_t T;
     uint8_t buffer[2];
     while(1){
         // Obtaining the current temperature
+        mcpWake();
+        __delay_ms(300);
         T = readTemp();
         buffer[0] = (T >> 8);
         buffer[1] = (T & 0xff);
         putU1(buffer[0]);
         putU1(buffer[1]);
+        mcpShutdown();
         __delay_ms(1000);
     }
     
