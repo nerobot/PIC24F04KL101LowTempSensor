@@ -11,3 +11,36 @@ uint8_t initMCP(){
     i2cWrite16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, 0x0);
     return 1;
 }
+
+uint16_t readTemp( void )
+{
+  uint16_t t = i2cRead16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_AMBIENT_TEMP);
+  return t;
+}
+
+void mcpShutdown(void)
+{
+  mcpShutdown_wake(1);
+}
+
+void mcpShutdown_wake(uint8_t sw_ID)
+{
+    uint16_t conf_shutdown ;
+    uint16_t conf_register = i2cRead16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG);
+    if (sw_ID == 1)
+    {
+       conf_shutdown = conf_register | MCP9808_REG_CONFIG_SHUTDOWN ;
+       i2cWrite16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, conf_shutdown);
+    }
+    if (sw_ID == 0)
+    {
+       conf_shutdown = conf_register & ~MCP9808_REG_CONFIG_SHUTDOWN ;
+       i2cWrite16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, conf_shutdown);
+    }
+}
+
+void mcpWake(void)
+{
+  mcpShutdown_wake(0);
+  //__delay_ms(250);
+}

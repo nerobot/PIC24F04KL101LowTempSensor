@@ -33,6 +33,12 @@ extern "C" {
 #define MCP9808_REG_DEVICE_ID          0x07
 
 uint8_t initmcp();
+void mcpShutdown_wake( uint8_t sw_ID );     //! Wakes up or shuts-down the module dependig on sw_ID. Internal.
+void mcpShutdown(void);                     //! Puts the MCP module into shutdown mode
+void mcpWake(void);                         //! Wakes up the MCP module
+uint8_t initMCP();                          //! Initialise the MCP module
+uint16_t readTemp( void );                  //! Read the current temperature and return as a word (two bytes)
+float readTempC( void );                    //! Read the current temperature and return as a float
 
 #ifdef	__cplusplus
 }

@@ -28,7 +28,7 @@ void i2cInit(uint8_t sspAdd)
     SSP1STAT = 0x00;                             //Resetting SSPSTAT register
     _SSP1IF=0; 
     
-    SSP1CON1bits.SSPEN = 0;         // Enables the serial port and configures the SDAx and SCLx pins as the serial port pins    
+    SSP1CON1bits.SSPEN = 1;         // Enables the serial port and configures the SDAx and SCLx pins as the serial port pins    
 } // InitI2C
 
 void i2cReady(){
