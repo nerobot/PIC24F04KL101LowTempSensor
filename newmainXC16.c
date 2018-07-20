@@ -19,7 +19,7 @@ int main(void) {
     putU1S("Uart1 init\n\r");
         
     // Init I2C
-    i2cInit(SSPADD1);
+    i2c_init();
     putU1S("i2c1 init\n\r");
     
     // Init MCP

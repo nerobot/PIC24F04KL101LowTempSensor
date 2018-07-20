@@ -1,177 +1,242 @@
+#include "PIC24F04KL101.h"
 #include <xc.h>
 #include "i2c1.h"
-//#include "PIC24F04KL101.h"
+#include <libpic30.h>
+
+#define SCL            (1 << 8)   // bit 6
+#define SDA            (1 << 9)   // bit 7
+
+#define I2C_ANSEL      ANSB
+#define I2C_INPORT     PORTB
+#define I2C_TRIS       TRISB
+
+#define I2C_SET_SCL    I2C_TRIS |= SCL;
+#define I2C_CLR_SCL    I2C_TRIS &= ~SCL;
+#define I2C_SET_SDA    I2C_TRIS |= SDA;
+#define I2C_CLR_SDA    I2C_TRIS &= ~SDA;
+#define I2C_DELAY      __delay_ms(100);   // compiler-specific function: MPLAB X v3
 
 
-void i2cInit(uint8_t sspAdd)
-{     
-    // Setting up SSP Control Register 1 (SSPCON1)
-        // I2C Mode Configuration
-    SSP1CON1bits.SSPEN = 0;         // Enables the serial port and configures the SDAx and SCLx pins as the serial port pins    
-    SSP1CON1bits.SSPM = 0b1000;     // I2C Master mode
-    
-    // Setting up SSP Address Register (SSPADD<6:0>)
-        // I2C Bit Rate
-    SSP1ADDbits.I2CADD = sspAdd;      //0x27;      // Focs = 8MHz, Gclock = 100kHz
-    
-    // Setting up SSP Status Register (SSPSTAT)
-        // Slew Rate Control
-        // Input Pin Threshold Levels (SMbus or I2C)
-    SSP1STATbits.SMP = 1;           // Slew rate control is disabled for Standard Speed mode (100 kHz and 1 MHz)
-    SSP1STATbits.CKE = 0;
-    
-    // Pin Direction Control (TRISC)
-    TRISBbits.TRISB9 = 1;
-    TRISBbits.TRISB8 = 1;
-    //TRISB |= 0x4a;
-
-    SSP1STAT = 0x00;                             //Resetting SSPSTAT register
-    _SSP1IF=0; 
-    
-    SSP1CON1bits.SSPEN = 1;         // Enables the serial port and configures the SDAx and SCLx pins as the serial port pins    
-} // InitI2C
-
-void i2cReady(){
-    // Wait for buffer full and read / write flag
-    while(SSP1STATbits.BF){} 
-}
-
-// i2c_Wait - wait for I2C transfer to finish
-void i2c_Wait(){
-    while ( ( SSP1CON2 & 0x1F ) || ( SSP1STAT & 0x04 ) ){}
-}
-
-void mssp_wait(void)
+void i2c_init(void)
 {
-    while(!_SSP1IF){}                              //wait till SSPIF flag is set
-    _SSP1IF=0;
+    /****************************************************************************
+     * Setting the Open Drain SFR(s)
+     ***************************************************************************/
+    ODCB = 0x0000;
+    
+    ANSB = 0x0000;
+    
+    I2C_ANSEL &= ~( SCL | SDA );   // set as digital IO
+
+    I2C_SET_SCL
+    I2C_SET_SDA
+
+    I2C_DELAY
 }
 
-void i2c_idle(void)
+
+
+// Initiating an I2C start condition:
+void i2c_start_condition( void )
 {
-  // Wait for Status Idle (i.e. ACKEN, RCEN, PEN, RSEN, SEN) and I2C Bus stop detection
-  while (( SSP1CON2 & 0x1F ) || ( SSP1STAT & 0x04 )){}
+    I2C_SET_SCL
+    I2C_SET_SDA
+    I2C_DELAY
+    I2C_CLR_SDA
+    I2C_DELAY
+    I2C_CLR_SCL
+    I2C_DELAY
 }
 
-
-// i2c_Address - Sends Slave Address and Read/Write mode
-// mode is either I2C_WRITE or I2C_READ
-uint8_t i2cAddress(uint8_t address, uint8_t mode)
+// Initiating an I2C stop condition:
+void i2c_stop_condition( void )
 {
-    uint8_t l_address;
+    I2C_CLR_SDA
+    I2C_DELAY
+    I2C_SET_SCL
+    I2C_DELAY
+    I2C_SET_SDA
+    I2C_DELAY
+}
 
-    l_address = address << 1;
-    l_address += mode;
-    
-    SSP1BUF = l_address;
-    i2cReady();
-    if (SSP1CON2bits.ACKSTAT)       // Check for acknowledge bit
-        return 0;
+// Writing a bit in I2C:
+void i2c_write_bit( uint8_t b )
+{
+    if( b > 0 )
+        I2C_SET_SDA
     else
-        return 1;
+        I2C_CLR_SDA
+
+    I2C_DELAY
+    I2C_SET_SCL
+    I2C_DELAY
+    I2C_CLR_SCL
 }
 
-uint8_t i2cWrite(uint8_t data){
-    SSP1BUF = data;                 // Write data to SSPBUF
-    mssp_wait();    
-    i2cReady();
-    if (SSP1CON2bits.ACKSTAT)       // Check for acknowledge bit
-        return 0;
-    else
-        return 1;
+// Reading a bit in I2C:
+uint8_t i2c_read_bit( void )
+{
+    uint8_t b;
     
+    I2C_SET_SDA
+    I2C_DELAY
+    I2C_SET_SCL
+    I2C_DELAY
+    
+    if( I2C_INPORT & SDA ) b = 1;
+    else b = 0;
+    
+    I2C_CLR_SCL
+    
+    return b;
 }
 
-uint8_t i2cStart(){
-    i2c_idle();
-    SSP1CON2bits.SEN = 1;           // Send start pulse
-    while (SSP1CON2bits.SEN){}       // Wait for completion of start pulse
-    //SSPIF = 0;
-    mssp_wait();  
-    if (!SSP1STATbits.S)            // Check whether START detected last
-        return 0;
-    else
-        return 1;
+//    if( i2c_write_byte( address << 1, true, false ) )   // start, send address, write
+
+// Writing a byte with I2C:
+bool i2c_write_byte( uint8_t B,
+                     bool start,
+                     bool stop )
+{
+    uint8_t ack = 0;
+
+    if( start ) i2c_start_condition();
+
+    uint8_t i;
+    for( i = 0; i < 8; i++ )
+    {
+        i2c_write_bit( B & 0x80 );   // write the most-significant bit
+        B <<= 1;
+    }
+    
+    ack = !i2c_read_bit();
+
+    if( stop ) i2c_stop_condition();
+    
+    return ack;
 }
 
-void i2cRestart(){
-    i2c_idle();
-    SSP1CON2bits.RSEN = 1;
-    mssp_wait();    
-    while (SSP1CON2bits.RSEN);
+// Reading a byte with I2C:
+uint8_t i2c_read_byte( bool ack,
+                       bool stop )
+{
+    uint8_t B = 0;
+
+    uint8_t i;
+    for( i = 0; i < 8; i++ )
+    {
+        B <<= 1;
+        B |= i2c_read_bit();
+    }
+
+    if( ack ) i2c_write_bit(0);
+    else i2c_write_bit(1);
+
+    if( stop ) i2c_stop_condition();
+
+    return B;
 }
 
-uint8_t i2cStop(){
-    i2c_idle();
-    i2cReady();
+// Sending a byte with I2C:
+bool i2c_send_byte( uint8_t address,
+                    uint8_t data )
+{
+    if( i2c_write_byte( address << 1, true, false ) )   // start, send address, write
+    {
+        // send data, stop
+        if( i2c_write_byte( data, false, true ) )  return true;
+    }
     
-    SSP1CON2bits.PEN = 1;           // Stop communication
-    mssp_wait();    
-    while (SSP1CON2bits.PEN){}       // Wait for end of stop pulse
-    if (!SSP1STATbits.P)            // Check if STOP is detected last
-        return 1;
-    else
-        return 0;
+    i2c_stop_condition();   // make sure to impose a stop if NAK'd
+    return false;
 }
 
-void i2cAck(){
-    SSP1CON2bits.ACKDT = 0;         // Acknowledge data 1:NACK, 0:ACK
-    SSP1CON2bits.ACKEN = 1;         // Enable ACK to send
-    while (SSP1CON2bits.ACKEN){}
+// Receiving a byte with a I2C:
+uint8_t i2c_receive_byte( uint8_t address )
+{
+    if( i2c_write_byte( ( address << 1 ) | 0x01, true, false ) )   // start, send address, read
+    {
+        return i2c_read_byte( false, true );
+    }
+
+    return 0;   // return zero if NAK'd
 }
 
-void i2cNack(){
-    SSP1CON2bits.ACKDT = 1;         // Acknowledge data 1:NACK, 0:ACK
-    SSP1CON2bits.ACKEN = 1;         // Enable ACK to send
-    while (SSP1CON2bits.ACKEN){}
+// Sending a byte of data with I2C:
+bool i2c_send_byte_data( uint8_t address,
+                         uint8_t reg,
+                         uint8_t data )
+{
+    if( i2c_write_byte( address << 1, true, false ) )   // start, send address, write
+    {
+        if( i2c_write_byte( reg, true, false ) )   // send desired register
+        {
+            if( i2c_write_byte( data, false, true ) ) return true;   // send data, stop
+        }
+    }
+
+    i2c_stop_condition();
+    return false;
 }
 
-uint8_t i2cRead(uint8_t ack){
-    uint8_t buffer;
-    SSP1CON2bits.RCEN = 1;          // Enable receive
-    
-    // Wait for buffer full flag which when complete byte received
-    while (!SSP1STATbits.BF){}
-    buffer = SSP1BUF;                // Copy SSPBUF to buffer
-    SSP1CON2bits.RCEN = 0;
-    
-    // Send acknowledgement or negative acknowledgement after read to continue or stop reading.
-    if (ack) 
-        SSP1CON2bits.ACKDT=0;	        // Ack
-    else       
-        SSP1CON2bits.ACKDT=1;	        // NAck
-    SSP1CON2bits.ACKEN=1;               // send acknowledge sequence
-    
-    i2cReady();
-    
-    return buffer;
+// Receiving a byte of data with I2C:
+uint8_t i2c_receive_byte_data( uint8_t address,
+                               uint8_t reg )
+{
+    //            putU1S("Sending addressn\r");
+
+    if( i2c_write_byte( address << 1, true, false ) )   // start, send address, write
+    {
+    //                putU1S("Sent asddress\n\r");                   
+        if( i2c_write_byte( reg, false, false ) )   // send desired register
+        {
+      //      putU1S("Sent desired register \n\r");
+            if( i2c_write_byte( ( address << 1) | 0x01, true, false ) )   // start again, send address, read
+            {
+      //          putU1S("REading byte\n\r");
+                return i2c_read_byte( false, true );   // read data
+                //putU1S("")
+            }
+        }
+    }
+
+    i2c_stop_condition();
+    return 0;   // return zero if NACKed
 }
 
-uint16_t i2cRead16Bit(uint8_t address, uint8_t reg){
-    uint16_t buffer = 0;
-    
-    i2cStart();
-    
-    i2cAddress(address, WRITE_CMD);
-    i2cWrite(reg);
-    i2cRestart();
-    
-    i2cAddress(address, READ_CMD);
-    buffer = i2cRead(1) << 8;
-    buffer += i2cRead(0);
-    
-    i2cStop();
-    return buffer;
+uint16_t i2c_receive_16bit_data(uint8_t address, uint8_t reg){
+    uint16_t data = 0;
+    if( i2c_write_byte( (address << 1) & 0b11111110, true, false ) )   // start, send address, write
+    {
+        if( i2c_write_byte( reg, false, false ) )   // send desired register
+        {
+            if( i2c_write_byte( ( address << 1) | 0x01, true, false ) )   // start again, send address, read
+            {
+                data = (i2c_read_byte( true, false ) << 8);   // read data
+                data += (i2c_read_byte( false, true) & 0x00ff );   // read data
+                return data;
+            }
+        }
+    }
+
+    i2c_stop_condition();
+    return 0;   // return zero if NACKed
 }
 
-void i2cWrite16Bit(uint8_t address, uint8_t reg, uint16_t data){
-    i2cStart();
-    
-    i2cAddress(address, WRITE_CMD);
-    i2cWrite(reg);
-    
-    i2cWrite(data >> 8);
-    i2cWrite(data & 0xFF);
-    
-    i2cStop();
+bool i2c_write_16bit_data(uint8_t address, uint8_t reg, uint16_t data){    
+    if( i2c_write_byte( (address << 1) | 0b00000001, true, false ) )   // start, send address, write
+    {
+        if( i2c_write_byte( reg, false, false ) )   // send desired register
+        {
+            if( i2c_write_byte( ( address << 1) | 0x01, true, false ) )   // start again, send address, read
+            {
+                i2c_write_byte( true, false , data>>8);   // read data
+                i2c_write_byte( false, true, data & 0xff);   // read data
+                return 1;
+            }
+        }
+    }
+
+    i2c_stop_condition();
+    return 0;   // return zero if NACKed
 }

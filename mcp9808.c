@@ -5,16 +5,16 @@
 
 
 uint8_t initMCP(){
-    if (i2cRead16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_MANUF_ID) != 0x0054) return 0;
-    if (i2cRead16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_DEVICE_ID) != 0x0400) return 0;
+    if (i2c_receive_16bit_data(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_MANUF_ID) != 0x0054) return 0;
+    if (i2c_receive_16bit_data(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_DEVICE_ID) != 0x0400) return 0;
     
-    i2cWrite16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, 0x0);
+    i2c_write_16bit_data(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, 0x0);
     return 1;
 }
 
 uint16_t readTemp( void )
 {
-  uint16_t t = i2cRead16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_AMBIENT_TEMP);
+  uint16_t t = i2c_receive_16bit_data(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_AMBIENT_TEMP);
   return t;
 }
 
@@ -26,16 +26,16 @@ void mcpShutdown(void)
 void mcpShutdown_wake(uint8_t sw_ID)
 {
     uint16_t conf_shutdown ;
-    uint16_t conf_register = i2cRead16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG);
+    uint16_t conf_register = i2c_receive_16bit_data(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG);
     if (sw_ID == 1)
     {
        conf_shutdown = conf_register | MCP9808_REG_CONFIG_SHUTDOWN ;
-       i2cWrite16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, conf_shutdown);
+       i2c_write_16bit_data(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, conf_shutdown);
     }
     if (sw_ID == 0)
     {
        conf_shutdown = conf_register & ~MCP9808_REG_CONFIG_SHUTDOWN ;
-       i2cWrite16Bit(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, conf_shutdown);
+       i2c_write_16bit_data(MCP9808_I2CADDR_DEFAULT, MCP9808_REG_CONFIG, conf_shutdown);
     }
 }
 
