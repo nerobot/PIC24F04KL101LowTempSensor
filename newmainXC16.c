@@ -59,6 +59,11 @@ int main(void) {
  * 
  * @section secHistory History
  * 
+ * # 20 July 2018
+ * 
+ *  * After looking further into the PIC24F04KL101 manual, I have realised that the PIC only has one MSSP module.
+ *  * Therefore I'm going to have to implement i2c in software. Hopefully the program usage won't go too high.
+ * 
  * # 17 July 2018
  * 
  *  * First creation of project using the PIC24F04KL101 MCU.
